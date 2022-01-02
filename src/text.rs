@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::state::{PersonState, Person};
+use crate::state::{Person, PersonState};
 
 pub struct MyTextPlugin;
 
@@ -56,7 +56,11 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(SimpleText);
 }
 
-fn simple_text_update(time: Res<Time>, mut query: Query<&mut Text, With<SimpleText>>, state: Query<&PersonState, With<Person>>) {
+fn simple_text_update(
+    time: Res<Time>,
+    mut query: Query<&mut Text, With<SimpleText>>,
+    state: Query<&PersonState, With<Person>>,
+) {
     let _seconds = time.seconds_since_startup() as f32;
     for person in state.iter() {
         if person.name == "Me" {

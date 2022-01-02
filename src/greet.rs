@@ -7,7 +7,7 @@ pub struct GreetPlugin;
 
 impl Plugin for GreetPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(GreetTimer(Timer::from_seconds(2.0, true)))
+        app.insert_resource(GreetTimer(Timer::from_seconds(10.0, true)))
             .add_system(greet_people);
     }
 }
