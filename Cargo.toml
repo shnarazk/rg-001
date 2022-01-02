@@ -6,4 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rg3d = { git = "https://github.com/rg3dengine/rg3d" }
+# rg3d = { git = "https://github.com/rg3dengine/rg3d" }
+bevy =  { git = "https://github.com/bevyengine/bevy" }

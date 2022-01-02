@@ -1,35 +1,54 @@
-use {
-    rg3d::{
-        engine::Engine,
-        engine::framework::prelude::*,
-        event_loop::ControlFlow,
-        core::color::{Color, Hsv},
-    },
-};
+use bevy::prelude::*;
 
-#[derive(Default)]
-struct Game {
-    hue: f32,
+pub struct HelloPlugin;
+
+fn hello_world() {
+    println!("Hello, world!");
 }
 
-impl GameState for Game {
-    fn init(_engine: &mut Engine) -> Self
-    where Self: Sized
-    {
-        Self::default()
-    }
-    fn on_tick(&mut self, engine: &mut Engine, dt: f32, _: &mut ControlFlow) {
-        self.hue += 24.0 * dt;
-        engine
-            .renderer
-            .set_backbuffer_clear_color(Color::from(Hsv::new(self.hue % 360.0, 100.0, 100.0)));
+impl Plugin for HelloPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_system(add_people);
+            // .add_system(hello_world);
     }
 }
+
+#[derive(Component, Default)]
+struct Person;
+
+#[derive(Component, Default)]
+struct Name(String);
+
+fn add_people(mut commands: Commands) {
+    commands.spawn().insert(Person).insert(Name("Me".to_string()));
+    commands.spawn().insert(Person).insert(Name("Alice".to_string()));
+}
+
+pub struct GreetPlugin;
+struct GreetTimer(Timer);
+
+impl Plugin for GreetPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(GreetTimer(Timer::from_seconds(2.0, true)))
+            .add_system(greet_people);
+    }
+}
+
+fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>) {
+    if timer.0.tick(time.delta()).just_finished() {
+        for name in query.iter() {
+            println!("Hello {}!", name.0);
+        }
+    }
+}
+
 
 fn main() {
     println!("Hello, world!");
-    Framework::<Game>::new()
-        .unwrap()
-        .title("Simple")
+    App::new()
+        .add_plugins(DefaultPlugins)
+        // .add_plugin(CorePlugin::default()) and InputPlugin, WindowPlugin
+        .add_plugin(HelloPlugin)
+        .add_plugin(GreetPlugin)
         .run();
 }
