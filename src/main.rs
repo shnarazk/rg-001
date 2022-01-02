@@ -1,4 +1,7 @@
-use {bevy::prelude::*, rg_001::greet::GreetPlugin};
+use {
+    bevy::prelude::*,
+    rg_001::{greet::GreetPlugin, text::MyTextPlugin},
+};
 
 fn main() {
     println!("Hello, world!");
@@ -6,5 +9,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(GreetPlugin)
+        .add_plugin(MyTextPlugin)
         .run();
 }
