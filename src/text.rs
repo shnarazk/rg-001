@@ -24,6 +24,12 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
         .spawn_bundle(TextBundle {
             style: Style {
                 align_self: AlignSelf::FlexEnd,
+                position_type: PositionType::Absolute,
+                position: Rect {
+                    top: Val::Px(5.0),
+                    left: Val::Px(15.0),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
             // Use `Text` directly
