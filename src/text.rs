@@ -1,12 +1,10 @@
 use bevy::prelude::*;
 
+use crate::state::{PersonState, Person};
+
 pub struct MyTextPlugin;
 
 impl Plugin for MyTextPlugin {
-    /// This example illustrates how to create UI text and update
-    /// it in a system. It displays the current FPS in the top left
-    /// corner, as well as text that changes colour in the bottom right.
-    /// For text within a scene, please see the text2d example.
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_simple)
             .add_startup_system(setup_color)
@@ -33,7 +31,7 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
                 // Construct a `Vec` of `TextSection`s
                 sections: vec![
                     TextSection {
-                        value: "経過時間: ".to_string(),
+                        value: "名前: ".to_string(),
                         style: TextStyle {
                             // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                             font: asset_server.load("fonts/NotoSansJP-Regular.otf"),
@@ -44,7 +42,8 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
                     TextSection {
                         value: "".to_string(),
                         style: TextStyle {
-                            font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                            // font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                            font: asset_server.load("fonts/NotoSansJP-Regular.otf"),
                             font_size: 60.0,
                             color: Color::GOLD,
                         },
@@ -57,10 +56,16 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(SimpleText);
 }
 
-fn simple_text_update(time: Res<Time>, mut query: Query<&mut Text, With<SimpleText>>) {
-    let seconds = time.seconds_since_startup() as f32;
-    for mut text in query.iter_mut() {
-        text.sections[1].value = format!("{:>.2}", seconds);
+fn simple_text_update(time: Res<Time>, mut query: Query<&mut Text, With<SimpleText>>, state: Query<&PersonState, With<Person>>) {
+    let _seconds = time.seconds_since_startup() as f32;
+    for person in state.iter() {
+        if person.name == "Me" {
+            for mut text in query.iter_mut() {
+                // text.sections[1].value = format!("{:>.2}", seconds);
+                text.sections[1].value = person.name.clone();
+            }
+            break;
+        }
     }
 }
 

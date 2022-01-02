@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 # rg3d = { git = "https://github.com/rg3dengine/rg3d" }
-bevy =  { git = "https://github.com/bevyengine/bevy" }
+bevy =  { git = "https://github.com/bevyengine/bevy", features = [ "dynamic" ] }
+# bevy =  { git = "https://github.com/bevyengine/bevy" }
