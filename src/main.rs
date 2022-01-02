@@ -108,6 +108,7 @@ fn setup(
     }
     {
         let mesh = asset_server.load("models/char-question.glb#Mesh0/Primitive0");
+        // let _material = asset_server.load("models/char-question.glb#Material0");
         let material = materials.add(StandardMaterial {
             base_color: Color::rgb(0.7, 0.8, 0.6),
             ..Default::default()
@@ -168,54 +169,16 @@ fn setup(
         });
     }
 
-    {
-        let mesh0 = asset_server.load("models/sky.glb#Mesh0/Primitive0");
-        let mesh1 = asset_server.load("models/sky.glb#Mesh0/Primitive1");
-        let mesh2 = asset_server.load("models/sky.glb#Mesh0/Primitive2");
-        let mesh3 = asset_server.load("models/sky.glb#Mesh0/Primitive3");
-        let mesh4 = asset_server.load("models/sky.glb#Mesh0/Primitive4");
-        let material0 = materials.add(StandardMaterial {
-            base_color: Color::rgb(0.2, 0.2, 0.2),
-            ..Default::default()
-        });
-        let material1 = materials.add(StandardMaterial {
-            base_color: Color::rgb(1.0, 0.6, 0.5),
-            ..Default::default()
-        });
-        let material2 = materials.add(StandardMaterial {
-            base_color: Color::rgb(1.0, 0.3, 0.3),
-            ..Default::default()
-        });
-        let transform = Transform::from_scale(Vec3::new(1.0, 1.0, 1.0))
-            .with_translation(Vec3::new(2.0, 1.0, 0.0));
-        // .with_rotation(Quat::from_rotation_x(PI_2));
+    let scale = 3.0;
+    for i in 0..5 {
+        let mesh = asset_server.load(format!("models/sky.glb#Mesh0/Primitive{}", i).as_str());
+        let material = asset_server.load(format!("models/sky.glb#Material{}", i).as_str());
+        let transform = Transform::from_scale(Vec3::new(scale, scale, scale))
+            .with_translation(Vec3::new(5.0, -2.0, 0.0))
+            .with_rotation(Quat::from_rotation_y(-0.4));
         commands.spawn_bundle(PbrBundle {
-            mesh: mesh0,
-            material: material0,
-            transform: transform.clone(),
-            ..Default::default()
-        });
-        commands.spawn_bundle(PbrBundle {
-            mesh: mesh1,
-            material: material1,
-            transform: transform.clone(),
-            ..Default::default()
-        });
-        commands.spawn_bundle(PbrBundle {
-            mesh: mesh2,
-            material: material2,
-            transform,
-            ..Default::default()
-        });
-        commands.spawn_bundle(PbrBundle {
-            mesh: mesh3,
-            // material: material2,
-            transform,
-            ..Default::default()
-        });
-        commands.spawn_bundle(PbrBundle {
-            mesh: mesh4,
-            // material: material2,
+            mesh,
+            material,
             transform,
             ..Default::default()
         });
