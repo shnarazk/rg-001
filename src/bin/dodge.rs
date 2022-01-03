@@ -79,22 +79,13 @@ fn print_mouse_events_system(
         let clicked = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
         let mut q1 = queries.q1();
         let trans = &mut q1.single_mut().translation;
-        let offset = if 10.0 < (clicked.x - trans.x).abs() && 10.0 < (clicked.y - trans.y).abs() {
-            10.0 / 2.0_f32.sqrt()
-        } else {
-            10.0
-        };
-        if trans.x + 10.0 < clicked.x {
-            trans.x += offset;
-        }
-        if clicked.x + 10.0 < trans.x {
-            trans.x -= offset;
-        }
-        if trans.y + 10.0 < clicked.y {
-            trans.y += offset;
-        }
-        if clicked.x + 10.0 < trans.x {
-            trans.y -= offset;
+        let dx = clicked.x - trans.x;
+        let dy = clicked.y - trans.y;
+        let dist2 = dx.powi(2) + dy.powi(2);
+        if 100.0 < dist2 {
+            let dist = dist2.sqrt();
+            trans.x += 10.0 * dx / dist;
+            trans.y += 10.0 * dy / dist;
         }
         // eprintln!(
         //     "Clicked at ({:>.2},{:>.2}) and I'm at ({:>.2},{:>.2})",
