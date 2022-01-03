@@ -73,11 +73,21 @@ struct Materials {
     segment_material: Color,
 }
 
+struct GrowthEvent;
+
+#[derive(Default)]
+struct LastTailPosition(Option<Position>);
+
+struct GameOverEvent;
+
+//
+// functions
+//
 fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 }
 
-fn spawn_segments(mut commands: Commands, materials: Res<Materials>,
+fn spawn_segment(mut commands: Commands, materials: Res<Materials>,
                   position: Position
 ) -> Entity {
     commands
@@ -115,7 +125,7 @@ fn spawn_snake(mut commands: Commands, materials: Res<Materials>,
             .insert(Position { x: 3, y: 4 })
             .insert(Size::square(0.8))
             .id(),
-        spawn_segments(
+        spawn_segment(
             commands,
             materials,
             Position { x: 3, y: 3 }
@@ -144,12 +154,12 @@ fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&m
 
 fn snake_movement(
     segments: ResMut<SnakeSegments>,
+    mut last_tail_position: ResMut<LastTailPosition>,
     mut query: Query<(Entity, &SnakeHead)>,
-    mut positions: Query<&mut Position>
+    mut positions: Query<&mut Position>,
+    mut game_over_writer: EventWriter<GameOverEvent>,
     )
 {
-    const W: i32 = ARENA_WIDTH as i32 - 1;
-    const H: i32 = ARENA_HEIGHT as i32 - 1;
     for (head_entity, head) in query.iter_mut() {
          let segment_positions = segments.0
              .iter()
@@ -158,17 +168,27 @@ fn snake_movement(
         let mut pos = positions.get_mut(head_entity).unwrap();
         match head.direction {
             Direction::Left => {
-                pos.x = (pos.x - 1).clamp(0, W);
+                pos.x -= 1;
             }
             Direction::Right => {
-                pos.x = (pos.x + 1).clamp(0, W);
+                pos.x += 1;
             }
             Direction::Down => {
-                pos.y = (pos.y - 1).clamp(0, H);
+                pos.y -= 1;
             }
             Direction::Up => {
-                pos.y = (pos.y + 1).clamp(0, H);
+                pos.y += 1;
             }
+        }
+        if pos.x < 0
+            || pos.y < 0
+            || pos.x as u32 >= ARENA_WIDTH
+            || pos.y as u32 >= ARENA_HEIGHT
+            || segment_positions.contains(&pos)
+        {
+            game_over_writer.send(GameOverEvent);
+            pos.x = (random::<u32>() % ARENA_WIDTH) as i32;
+            pos.y = (random::<u32>() % ARENA_HEIGHT) as i32;
         }
         segment_positions
             .iter()
@@ -176,6 +196,7 @@ fn snake_movement(
             .for_each(|(pos, segment)| {
                 *positions.get_mut(*segment).unwrap() = *pos;
             });
+            last_tail_position.0 = Some(*segment_positions.last().unwrap());
     }
 }
 
@@ -204,6 +225,22 @@ fn position_translation(windows: Res<Windows>, mut q: Query<(&Position, &mut Tra
     }
 }
 
+fn snake_grow(
+    commands: Commands,
+    last_tail_position: ResMut<LastTailPosition>,
+    mut segments: ResMut<SnakeSegments>,
+    mut growth_reader: EventReader<GrowthEvent>,
+    materials: Res<Materials>,
+) {
+    if growth_reader.iter().next().is_some() {
+        segments.0.push(spawn_segment(
+            commands,
+            materials,
+            last_tail_position.0.unwrap(),
+        ))
+    }
+}
+
 //
 // food
 //
@@ -225,6 +262,41 @@ fn food_spawner(mut commands: Commands, materials: Res<Materials>) {
         .insert(Size::square(0.8));
 }
 
+fn snake_eating(
+    mut commands: Commands,
+    mut growth_writer: EventWriter<GrowthEvent>,
+    food_positions: Query<(Entity, &Position), With<Food>>,
+    head_positions: Query<&Position, With<SnakeHead>>,
+) {
+    for head_pos in head_positions.iter() {
+        for (ent, _) in food_positions.iter().filter(|(_, f)| *f == head_pos) {
+            commands.entity(ent).despawn();
+            growth_writer.send(GrowthEvent)
+        }
+    }
+}
+
+// game over
+fn game_over(
+    mut commands: Commands,
+    mut reader: EventReader<GameOverEvent>,
+    // materials: Res<Materials>,
+    // segments_res: ResMut<SnakeSegments>,
+    food: Query<Entity, With<Food>>,
+    segments: Query<Entity, With<SnakeSegment>>,
+)
+{
+    if reader.iter().next().is_some() {
+        for ent in segments.iter().skip(1).chain(food.iter()) {
+            commands.entity(ent).despawn();
+        }
+        // spawn_snake(commands, materials, segments_res);
+    }
+}
+
+//
+// Main
+//
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
@@ -237,9 +309,12 @@ fn main() {
         .insert_resource(Materials {
             head_material: Color::rgb(0.7, 0.7, 0.7),
             food_material: Color::rgb(1.0, 0.2, 0.6),
-            segment_material: Color::rgb(0.3, 0.3, 0.3),
+            segment_material: Color::rgb(0.4, 0.4, 0.4),
         })
         .insert_resource(SnakeSegments::default())
+        .insert_resource(LastTailPosition::default())
+        .add_event::<GrowthEvent>()
+        .add_event::<GameOverEvent>()
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_startup_system(spawn_snake)
@@ -251,7 +326,16 @@ fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.15))
-                .with_system(snake_movement.label(SnakeMovement::Movement)),
+                .with_system(snake_movement.label(SnakeMovement::Movement))
+                .with_system(
+                    snake_eating.label(SnakeMovement::Eating)
+                        .after(SnakeMovement::Movement)
+                )
+                .with_system(
+                    snake_grow
+                        .label(SnakeMovement::Growth)
+                        .after(SnakeMovement::Eating)
+                )
         )
         .add_system(position_translation)
         .add_system(size_scaling)
@@ -260,5 +344,6 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(2.0))
                 .with_system(food_spawner),
         )
+        .add_system(game_over.after(SnakeMovement::Movement))
         .run();
 }
