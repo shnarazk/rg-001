@@ -1,29 +1,25 @@
 #![allow(unused)]
-
-use bevy::input::mouse::{MouseButtonInput, MouseMotion};
-use {
-    bevy::{asset::LoadState, prelude::*},
-    rg_001::{button::ButtonPlugin, state::PlayerPlugin, text::MyTextPlugin},
-};
+use bevy::{asset::LoadState, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum AppState {
     Setup,
-    Finished,
+    Ready,
 }
 
 fn main() {
     App::new()
-        .init_resource::<RpgSpriteHandles>()
+        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        .init_resource::<PlayerSpriteHandles>()
         .add_plugins(DefaultPlugins)
         .add_state(AppState::Setup)
         // from 'state'
         .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
-        .add_system_set(SystemSet::on_enter(AppState::Finished).with_system(setup))
-        .add_system_set(SystemSet::on_update(AppState::Finished).with_system(animate_sprite_system))
+        .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup))
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_sprite_system))
         .add_system_set(
-            SystemSet::on_update(AppState::Finished).with_system(print_mouse_events_system),
+            SystemSet::on_update(AppState::Ready).with_system(print_mouse_events_system),
         )
         // .add_startup_system(setup)
         // .add_system(animate_sprite_system)
@@ -31,31 +27,36 @@ fn main() {
 }
 
 #[derive(Component, Debug, Default)]
-struct Player;
+struct Player {
+    flip_x: bool,
+    flip_y: bool,
+}
 
 #[derive(Component, Debug, Default)]
 struct MainCamera;
 
 // (from texture_atlas)
-
 #[derive(Default)]
-struct RpgSpriteHandles {
+struct PlayerSpriteHandles {
     handles: Vec<HandleUntyped>,
 }
 
-fn load_textures(mut rpg_sprite_handles: ResMut<RpgSpriteHandles>, asset_server: Res<AssetServer>) {
+fn load_textures(
+    mut rpg_sprite_handles: ResMut<PlayerSpriteHandles>,
+    asset_server: Res<AssetServer>,
+) {
     rpg_sprite_handles.handles = asset_server.load_folder("dodge/art").unwrap();
 }
 
 fn check_textures(
     mut state: ResMut<State<AppState>>,
-    rpg_sprite_handles: ResMut<RpgSpriteHandles>,
+    rpg_sprite_handles: ResMut<PlayerSpriteHandles>,
     asset_server: Res<AssetServer>,
 ) {
     if let LoadState::Loaded =
         asset_server.get_group_load_state(rpg_sprite_handles.handles.iter().map(|handle| handle.id))
     {
-        state.set(AppState::Finished).unwrap();
+        state.set(AppState::Ready).unwrap();
     }
 }
 
@@ -77,7 +78,7 @@ fn print_mouse_events_system(
         let camera_transform = queries.q0().single();
         let clicked = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
         let mut q1 = queries.q1();
-        let mut trans = &mut q1.single_mut().translation;
+        let trans = &mut q1.single_mut().translation;
         let offset = if 10.0 < (clicked.x - trans.x).abs() && 10.0 < (clicked.y - trans.y).abs() {
             10.0 / 2.0_f32.sqrt()
         } else {
@@ -133,7 +134,7 @@ fn setup(
             ..Default::default()
         })
         .insert(Timer::from_seconds(0.15, true))
-        .insert(Player {});
+        .insert(Player::default());
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(MainCamera);
