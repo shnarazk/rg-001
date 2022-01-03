@@ -45,27 +45,35 @@ fn spawn_snake(mut commands: Commands, materials: Res<Materials>) {
             },
             ..Default::default()
         })
+        .insert(Timer::from_seconds(0.05, true))
         .insert(SnakeHead)
         .insert(Position { x: 3, y: 4 })
         .insert(Size::square(1.0));
 }
 
 fn snake_movement(
+    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut head_positions: Query<&mut Transform, With<SnakeHead>>,
+    mut head_positions: Query<(&mut Timer, &mut Position), With<SnakeHead>>,
 ) {
-    for mut transform in head_positions.iter_mut() {
+    const W: i32 = ARENA_WIDTH as i32 - 1;
+    const H: i32 = ARENA_HEIGHT as i32 - 1;
+    for (mut timer, mut pos) in head_positions.iter_mut() {
+        timer.tick(time.delta());
+        if !timer.finished() {
+            continue;
+        }
         if keyboard_input.pressed(KeyCode::Left) {
-            transform.translation.x -= 2.0;
+            pos.x = (pos.x - 1).clamp(0, W);
         }
         if keyboard_input.pressed(KeyCode::Right) {
-            transform.translation.x += 2.0;
+            pos.x = (pos.x + 1).clamp(0, W);
         }
         if keyboard_input.pressed(KeyCode::Down) {
-            transform.translation.y -= 2.0;
+            pos.y = (pos.y - 1).clamp(0, H);
         }
         if keyboard_input.pressed(KeyCode::Up) {
-            transform.translation.y += 2.0;
+            pos.y = (pos.y + 1).clamp(0, H);
         }
     }
 }
@@ -97,7 +105,13 @@ fn position_translation(windows: Res<Windows>, mut q: Query<(&Position, &mut Tra
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.9, 0.8, 0.7)))
+        .insert_resource(WindowDescriptor {
+            title: "Snake!".to_string(),
+            width: 500.0,
+            height: 500.0,
+            ..Default::default()
+        })
+        .insert_resource(ClearColor(Color::rgb(0.05, 0.05, 0.05)))
         .insert_resource(Materials {
             head_material: Color::rgb(0.7, 0.7, 0.7),
         })
