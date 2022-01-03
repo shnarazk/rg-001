@@ -1,4 +1,6 @@
 #![allow(unused)]
+
+use bevy::input::mouse::{MouseButtonInput, MouseMotion};
 use {
     bevy::{asset::LoadState, prelude::*},
     rg_001::{button::ButtonPlugin, state::PlayerPlugin, text::MyTextPlugin},
@@ -20,10 +22,19 @@ fn main() {
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
         .add_system_set(SystemSet::on_enter(AppState::Finished).with_system(setup))
         .add_system_set(SystemSet::on_update(AppState::Finished).with_system(animate_sprite_system))
+        .add_system_set(
+            SystemSet::on_update(AppState::Finished).with_system(print_mouse_events_system),
+        )
         // .add_startup_system(setup)
         // .add_system(animate_sprite_system)
         .run()
 }
+
+#[derive(Component, Debug, Default)]
+struct Player;
+
+#[derive(Component, Debug, Default)]
+struct MainCamera;
 
 // (from texture_atlas)
 
@@ -48,6 +59,49 @@ fn check_textures(
     }
 }
 
+// from Unofficial Bevy Cheat Book 'Convert cursor to world coodinates'
+#[allow(clippy::type_complexity)]
+fn print_mouse_events_system(
+    // mut mouse_button_input: Res<Input<MouseButton>>,
+    windows: ResMut<Windows>,
+    mut queries: QuerySet<(
+        QueryState<&Transform, With<MainCamera>>,
+        QueryState<&mut Transform, With<Player>>,
+    )>,
+) {
+    // if mouse_button_input.just_pressed(MouseButton::Left) {
+    let window = windows.get_primary().unwrap();
+    if let Some(position) = window.cursor_position() {
+        let size = Vec2::new(window.width() as f32, window.height() as f32);
+        let p = position - size / 2.0;
+        let camera_transform = queries.q0().single();
+        let clicked = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
+        let mut q1 = queries.q1();
+        let mut trans = &mut q1.single_mut().translation;
+        let offset = if 10.0 < (clicked.x - trans.x).abs() && 10.0 < (clicked.y - trans.y).abs() {
+            10.0 / 2.0_f32.sqrt()
+        } else {
+            10.0
+        };
+        if trans.x + 10.0 < clicked.x {
+            trans.x += offset;
+        }
+        if clicked.x + 10.0 < trans.x {
+            trans.x -= offset;
+        }
+        if trans.y + 10.0 < clicked.y {
+            trans.y += offset;
+        }
+        if clicked.x + 10.0 < trans.x {
+            trans.y -= offset;
+        }
+        // eprintln!(
+        //     "Clicked at ({:>.2},{:>.2}) and I'm at ({:>.2},{:>.2})",
+        //     clicked.x, clicked.y, trans.x, trans.y,
+        // );
+    }
+}
+
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -67,18 +121,22 @@ fn setup(
     let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas);
 
-    commands.spawn_bundle(SpriteSheetBundle {
-        transform: Transform {
-            // translation: Vec3::new(150.0, 0.0, 0.0),
-            // scale: Vec3::splat(4.0),
+    commands
+        .spawn_bundle(SpriteSheetBundle {
+            transform: Transform {
+                // translation: Vec3::new(150.0, 0.0, 0.0),
+                // scale: Vec3::splat(4.0),
+                ..Default::default()
+            },
+            sprite: TextureAtlasSprite::new(vendor_index),
+            texture_atlas: atlas_handle,
             ..Default::default()
-        },
-        sprite: TextureAtlasSprite::new(vendor_index),
-        texture_atlas: atlas_handle,
-        ..Default::default()
-    })
-        .insert(Timer::from_seconds(0.15, true));
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+        })
+        .insert(Timer::from_seconds(0.15, true))
+        .insert(Player {});
+    commands
+        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .insert(MainCamera);
 }
 
 // (from 'sprite_sheet')
@@ -98,7 +156,9 @@ fn animate_sprite_system(
 
 // Display the player's sprite (from 'sprite')
 fn setup1(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands
+        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .insert(MainCamera);
     commands.spawn_bundle(SpriteBundle {
         texture: asset_server.load("dodge/art/playerGrey_walk1.png"),
         ..Default::default()
