@@ -18,9 +18,7 @@ fn main() {
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_sprite_system))
-        .add_system_set(
-            SystemSet::on_update(AppState::Ready).with_system(print_mouse_events_system),
-        )
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(track_mouse_movement))
         // .add_startup_system(setup)
         // .add_system(animate_sprite_system)
         .run()
@@ -28,8 +26,7 @@ fn main() {
 
 #[derive(Component, Debug, Default)]
 struct Player {
-    flip_x: bool,
-    flip_y: bool,
+    flip: bool,
 }
 
 #[derive(Component, Debug, Default)]
@@ -62,15 +59,14 @@ fn check_textures(
 
 // from Unofficial Bevy Cheat Book 'Convert cursor to world coodinates'
 #[allow(clippy::type_complexity)]
-fn print_mouse_events_system(
-    // mut mouse_button_input: Res<Input<MouseButton>>,
+fn track_mouse_movement(
     windows: ResMut<Windows>,
     mut queries: QuerySet<(
         QueryState<&Transform, With<MainCamera>>,
         QueryState<&mut Transform, With<Player>>,
+        QueryState<&mut Player>
     )>,
 ) {
-    // if mouse_button_input.just_pressed(MouseButton::Left) {
     let window = windows.get_primary().unwrap();
     if let Some(position) = window.cursor_position() {
         let size = Vec2::new(window.width() as f32, window.height() as f32);
@@ -86,11 +82,8 @@ fn print_mouse_events_system(
             let dist = dist2.sqrt();
             trans.x += 10.0 * dx / dist;
             trans.y += 10.0 * dy / dist;
+            queries.q2().single_mut().flip = dx < 0.0;
         }
-        // eprintln!(
-        //     "Clicked at ({:>.2},{:>.2}) and I'm at ({:>.2},{:>.2})",
-        //     clicked.x, clicked.y, trans.x, trans.y,
-        // );
     }
 }
 
@@ -132,16 +125,22 @@ fn setup(
 }
 
 // (from 'sprite_sheet')
+#[allow(clippy::type_complexity)]
 fn animate_sprite_system(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    mut query: QuerySet<(
+        QueryState<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
+        QueryState<(& Player)>,
+    )>,
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle) in query.iter_mut() {
+    let flip_x = query.q1().single().flip;
+    for (mut timer, mut sprite, texture_atlas_handle) in query.q0().iter_mut() {
         timer.tick(time.delta());
         if timer.finished() {
             let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
             sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
+            sprite.flip_x = flip_x;
         }
     }
 }
