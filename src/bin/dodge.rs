@@ -136,13 +136,16 @@ fn setup(
 fn animate_sprite_system(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(
-        &mut Player,
-        &mut Timer,
-        &mut Transform,
-        &mut TextureAtlasSprite,
-        &Handle<TextureAtlas>,
-    ), With<Player>>,
+    mut query: Query<
+        (
+            &mut Player,
+            &mut Timer,
+            &mut Transform,
+            &mut TextureAtlasSprite,
+            &Handle<TextureAtlas>,
+        ),
+        With<Player>,
+    >,
 ) {
     for (mut player, mut timer, mut trans, mut sprite, texture_atlas_handle) in query.iter_mut() {
         trans.translation.x += player.diff_x;
