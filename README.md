@@ -2,7 +2,9 @@
 
 - https://bevyengine.org
 - https://github.com/bevyengine/bevy
+- https://bevy-cheatbook.github.io/introduction.html
+- https://mbuffett.com/posts/bevy-snake-tutorial/
 
-### deprecated
+### other links
 - https://github.com/rg3dengine/rg3d
 
