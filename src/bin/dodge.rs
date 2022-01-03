@@ -27,6 +27,10 @@ fn main() {
 #[derive(Component, Debug, Default)]
 struct Player {
     flip: bool,
+    diff_x: f32,
+    diff_y: f32,
+    trans_x: f32,
+    trans_y: f32,
 }
 
 #[derive(Component, Debug, Default)]
@@ -63,8 +67,7 @@ fn track_mouse_movement(
     windows: ResMut<Windows>,
     mut queries: QuerySet<(
         QueryState<&Transform, With<MainCamera>>,
-        QueryState<&mut Transform, With<Player>>,
-        QueryState<&mut Player>
+        QueryState<&mut Player>,
     )>,
 ) {
     let window = windows.get_primary().unwrap();
@@ -74,15 +77,19 @@ fn track_mouse_movement(
         let camera_transform = queries.q0().single();
         let clicked = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
         let mut q1 = queries.q1();
-        let trans = &mut q1.single_mut().translation;
-        let dx = clicked.x - trans.x;
-        let dy = clicked.y - trans.y;
+        let mut player = q1.single_mut();
+        let dx = clicked.x - player.trans_x;
+        let dy = clicked.y - player.trans_y;
         let dist2 = dx.powi(2) + dy.powi(2);
         if 100.0 < dist2 {
             let dist = dist2.sqrt();
-            trans.x += 10.0 * dx / dist;
-            trans.y += 10.0 * dy / dist;
-            queries.q2().single_mut().flip = dx < 0.0;
+            player.flip = dx < 0.0;
+            player.diff_x = 10.0 * dx / dist;
+            player.diff_y = 10.0 * dy / dist;
+        } else {
+            player.flip = false;
+            player.diff_x = 0.0;
+            player.diff_y = 0.0;
         }
     }
 }
@@ -129,18 +136,24 @@ fn setup(
 fn animate_sprite_system(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: QuerySet<(
-        QueryState<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
-        QueryState<(& Player)>,
-    )>,
+    mut query: Query<(
+        &mut Player,
+        &mut Timer,
+        &mut Transform,
+        &mut TextureAtlasSprite,
+        &Handle<TextureAtlas>,
+    ), With<Player>>,
 ) {
-    let flip_x = query.q1().single().flip;
-    for (mut timer, mut sprite, texture_atlas_handle) in query.q0().iter_mut() {
+    for (mut player, mut timer, mut trans, mut sprite, texture_atlas_handle) in query.iter_mut() {
+        trans.translation.x += player.diff_x;
+        trans.translation.y += player.diff_y;
+        player.trans_x = trans.translation.x;
+        player.trans_y = trans.translation.y;
         timer.tick(time.delta());
         if timer.finished() {
             let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
             sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
-            sprite.flip_x = flip_x;
+            sprite.flip_x = player.flip;
         }
     }
 }
