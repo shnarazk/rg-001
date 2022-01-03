@@ -58,34 +58,69 @@ struct SnakeHead {
     direction: Direction,
 }
 
+#[derive(Component, Debug)]
+struct SnakeSegment;
+
+#[derive(Component, Debug, Default)]
+struct SnakeSegments(Vec<Entity>);
+
 #[derive(Component, Default, Debug)]
 struct Food;
 
 struct Materials {
     head_material: Color,
     food_material: Color,
+    segment_material: Color,
 }
 
 fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 }
 
-fn spawn_snake(mut commands: Commands, materials: Res<Materials>) {
+fn spawn_segments(mut commands: Commands, materials: Res<Materials>,
+                  position: Position
+) -> Entity {
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                color: materials.head_material,
+                color: materials.segment_material,
                 custom_size: Some(Vec2::new(10.0, 10.0)),
                 ..Default::default()
             },
             ..Default::default()
         })
-        .insert(Timer::from_seconds(0.05, true))
-        .insert(SnakeHead {
-            direction: Direction::Up,
-        })
-        .insert(Position { x: 3, y: 4 })
-        .insert(Size::square(0.8));
+        .insert(SnakeSegment)
+        .insert(position)
+        .insert(Size::square(0.6))
+        .id()
+}
+
+fn spawn_snake(mut commands: Commands, materials: Res<Materials>,
+               mut segments: ResMut<SnakeSegments>,
+) {
+    segments.0 = vec![
+        commands
+            .spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    color: materials.head_material,
+                    custom_size: Some(Vec2::new(10.0, 10.0)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .insert(Timer::from_seconds(0.05, true))
+            .insert(SnakeHead {
+                direction: Direction::Up,
+            })
+            .insert(Position { x: 3, y: 4 })
+            .insert(Size::square(0.8))
+            .id(),
+        spawn_segments(
+            commands,
+            materials,
+            Position { x: 3, y: 3 }
+        ),
+    ];
 }
 
 fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut SnakeHead>) {
@@ -107,10 +142,20 @@ fn snake_movement_input(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&m
     }
 }
 
-fn snake_movement(mut query: Query<(&mut Position, &SnakeHead)>) {
+fn snake_movement(
+    segments: ResMut<SnakeSegments>,
+    mut query: Query<(Entity, &SnakeHead)>,
+    mut positions: Query<&mut Position>
+    )
+{
     const W: i32 = ARENA_WIDTH as i32 - 1;
     const H: i32 = ARENA_HEIGHT as i32 - 1;
-    for (mut pos, head) in query.iter_mut() {
+    for (head_entity, head) in query.iter_mut() {
+         let segment_positions = segments.0
+             .iter()
+             .map(|e| *positions.get_mut(*e).unwrap())
+             .collect::<Vec<Position>>();
+        let mut pos = positions.get_mut(head_entity).unwrap();
         match head.direction {
             Direction::Left => {
                 pos.x = (pos.x - 1).clamp(0, W);
@@ -125,6 +170,12 @@ fn snake_movement(mut query: Query<(&mut Position, &SnakeHead)>) {
                 pos.y = (pos.y + 1).clamp(0, H);
             }
         }
+        segment_positions
+            .iter()
+            .zip(segments.0.iter().skip(1))
+            .for_each(|(pos, segment)| {
+                *positions.get_mut(*segment).unwrap() = *pos;
+            });
     }
 }
 
@@ -186,7 +237,9 @@ fn main() {
         .insert_resource(Materials {
             head_material: Color::rgb(0.7, 0.7, 0.7),
             food_material: Color::rgb(1.0, 0.2, 0.6),
+            segment_material: Color::rgb(0.3, 0.3, 0.3),
         })
+        .insert_resource(SnakeSegments::default())
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_startup_system(spawn_snake)
