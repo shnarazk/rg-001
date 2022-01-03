@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use rand::prelude::random;
+use bevy::core::FixedTimestep;
 
 const ARENA_WIDTH: u32 = 10;
 const ARENA_HEIGHT: u32 = 10;
@@ -27,8 +29,12 @@ impl Size {
 #[derive(Component, Default, Debug)]
 struct SnakeHead;
 
+#[derive(Component, Default, Debug)]
+struct Food;
+
 struct Materials {
     head_material: Color,
+    food_material: Color,
 }
 
 fn setup(mut commands: Commands) {
@@ -48,7 +54,7 @@ fn spawn_snake(mut commands: Commands, materials: Res<Materials>) {
         .insert(Timer::from_seconds(0.05, true))
         .insert(SnakeHead)
         .insert(Position { x: 3, y: 4 })
-        .insert(Size::square(1.0));
+        .insert(Size::square(0.8));
 }
 
 fn snake_movement(
@@ -103,6 +109,28 @@ fn position_translation(windows: Res<Windows>, mut q: Query<(&Position, &mut Tra
     }
 }
 
+//
+// food
+//
+fn food_spawner(mut commands: Commands, materials: Res<Materials>) {
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: materials.food_material,
+                custom_size: Some(Vec2::new(10.0, 10.0)),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(Food)
+        .insert(Position {
+            x: (random::<u32>() % ARENA_WIDTH) as i32,
+            y: (random::<u32>() % ARENA_HEIGHT) as i32,
+        })
+        .insert(Size::square(0.8))
+        ;
+}
+
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
@@ -114,6 +142,7 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.05, 0.05, 0.05)))
         .insert_resource(Materials {
             head_material: Color::rgb(0.7, 0.7, 0.7),
+            food_material: Color::rgb(1.0, 0.2, 0.6),
         })
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
@@ -121,5 +150,10 @@ fn main() {
         .add_system(snake_movement)
         .add_system(position_translation)
         .add_system(size_scaling)
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(2.0))
+                .with_system(food_spawner)
+        )
         .run();
 }

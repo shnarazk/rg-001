@@ -9,3 +9,4 @@ edition = "2021"
 # rg3d = { git = "https://github.com/rg3dengine/rg3d" }
 bevy =  { git = "https://github.com/bevyengine/bevy", features = [ "dynamic" ] }
 # bevy =  { git = "https://github.com/bevyengine/bevy" }
+rand = "0.7"
