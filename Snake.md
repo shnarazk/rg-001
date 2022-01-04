@@ -26,8 +26,14 @@ https://github.com/shnarazk/rg-001/blob/a0b55ab9cf1b261e02694cfbb20ae1f1393e2efe
 
 ## '**The beginnings of a snake**'
 
+- `insert`するためには`Component` traitが必要になった。
 - `ColorMaterial`はなくなったので`Color`で代用する。
 - `SpriteBundle`はtextureベースになり、`material`や`sprite`がなくなった。`material`は`color`で、`sprite`は`custom_size`で置き換える。`custom_size`は`Option`でwrapされていることに注意。
+
+```diff
++ #[derive(Component)]
+  struct SnakeHead;
+```
 
 ```diff
   fn spawn_segment(mut commands: Commands, materials: Res<Materials>, position: Position) -> Entity {
@@ -48,4 +54,3 @@ https://github.com/shnarazk/rg-001/blob/a0b55ab9cf1b261e02694cfbb20ae1f1393e2efe
           .id()
 }
 ```
-
