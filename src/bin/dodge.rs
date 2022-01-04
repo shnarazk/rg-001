@@ -1,5 +1,5 @@
 #![allow(unused)]
-use bevy::{asset::LoadState, prelude::*, input::system::exit_on_esc_system};
+use bevy::{asset::LoadState, input::system::exit_on_esc_system, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum AppState {
@@ -64,18 +64,17 @@ impl Character {
 fn animate_character(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<
-        (
-            &mut Character,
-            &mut Timer,
-            &mut Transform,
-            &mut TextureAtlasSprite,
-        )
-    >,
+    mut query: Query<(
+        &mut Character,
+        &mut Timer,
+        &mut Transform,
+        &mut TextureAtlasSprite,
+    )>,
 ) {
     for (mut character, mut timer, mut trans, mut sprite) in query.iter_mut() {
         trans.translation.x += character.diff_x;
         trans.translation.y += character.diff_y;
+        // memoize the location after moving
         character.trans_x = trans.translation.x;
         character.trans_y = trans.translation.y;
         timer.tick(time.delta());
@@ -125,7 +124,6 @@ fn setup_player(
         .insert(Character::from(texture_atlas))
         .insert(Player);
 }
-
 
 // (from 'sprite_sheet')
 #[allow(clippy::type_complexity)]
