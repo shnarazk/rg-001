@@ -25,9 +25,9 @@ fn main() {
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
-        .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_enemy))
+        // .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_enemy))
         .add_system_set(
-            SystemSet::new()
+            SystemSet::on_update(AppState::Ready)
                 .with_run_criteria(FixedTimestep::step(0.55))
                 .with_system(setup_enemy),
         )
