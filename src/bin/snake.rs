@@ -184,8 +184,8 @@ fn snake_movement(
             || segment_positions.contains(&pos)
         {
             game_over_writer.send(GameOverEvent);
-            pos.x = (random::<u32>() % ARENA_WIDTH) as i32;
-            pos.y = (random::<u32>() % ARENA_HEIGHT) as i32;
+            pos.x = (random::<f32>() * ARENA_WIDTH as f32) as i32;
+            pos.y = (random::<f32>() * ARENA_HEIGHT as f32) as i32;
         }
         segment_positions
             .iter()
