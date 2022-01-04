@@ -87,9 +87,7 @@ fn setup(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 }
 
-fn spawn_segment(mut commands: Commands, materials: Res<Materials>,
-                  position: Position
-) -> Entity {
+fn spawn_segment(mut commands: Commands, materials: Res<Materials>, position: Position) -> Entity {
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -105,8 +103,10 @@ fn spawn_segment(mut commands: Commands, materials: Res<Materials>,
         .id()
 }
 
-fn spawn_snake(mut commands: Commands, materials: Res<Materials>,
-               mut segments: ResMut<SnakeSegments>,
+fn spawn_snake(
+    mut commands: Commands,
+    materials: Res<Materials>,
+    mut segments: ResMut<SnakeSegments>,
 ) {
     segments.0 = vec![
         commands
@@ -126,11 +126,7 @@ fn spawn_snake(mut commands: Commands, materials: Res<Materials>,
             .insert(Position { x: 3, y: 4 })
             .insert(Size::square(0.8))
             .id(),
-        spawn_segment(
-            commands,
-            materials,
-            Position { x: 3, y: 3 }
-        ),
+        spawn_segment(commands, materials, Position { x: 3, y: 3 }),
     ];
 }
 
@@ -159,13 +155,13 @@ fn snake_movement(
     mut query: Query<(Entity, &SnakeHead)>,
     mut positions: Query<&mut Position>,
     mut game_over_writer: EventWriter<GameOverEvent>,
-    )
-{
+) {
     for (head_entity, head) in query.iter_mut() {
-         let segment_positions = segments.0
-             .iter()
-             .map(|e| *positions.get_mut(*e).unwrap())
-             .collect::<Vec<Position>>();
+        let segment_positions = segments
+            .0
+            .iter()
+            .map(|e| *positions.get_mut(*e).unwrap())
+            .collect::<Vec<Position>>();
         let mut pos = positions.get_mut(head_entity).unwrap();
         match head.direction {
             Direction::Left => {
@@ -197,7 +193,7 @@ fn snake_movement(
             .for_each(|(pos, segment)| {
                 *positions.get_mut(*segment).unwrap() = *pos;
             });
-            last_tail_position.0 = Some(*segment_positions.last().unwrap());
+        last_tail_position.0 = Some(*segment_positions.last().unwrap());
     }
 }
 
@@ -281,17 +277,16 @@ fn snake_eating(
 fn game_over(
     mut commands: Commands,
     mut reader: EventReader<GameOverEvent>,
-    // materials: Res<Materials>,
-    // segments_res: ResMut<SnakeSegments>,
+    materials: Res<Materials>,
+    segments_res: ResMut<SnakeSegments>,
     food: Query<Entity, With<Food>>,
     segments: Query<Entity, With<SnakeSegment>>,
-)
-{
+) {
     if reader.iter().next().is_some() {
-        for ent in segments.iter().skip(1).chain(food.iter()) {
+        for ent in segments.iter().chain(food.iter()) {
             commands.entity(ent).despawn();
         }
-        // spawn_snake(commands, materials, segments_res);
+        spawn_snake(commands, materials, segments_res);
     }
 }
 
@@ -329,14 +324,15 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(0.15))
                 .with_system(snake_movement.label(SnakeMovement::Movement))
                 .with_system(
-                    snake_eating.label(SnakeMovement::Eating)
-                        .after(SnakeMovement::Movement)
+                    snake_eating
+                        .label(SnakeMovement::Eating)
+                        .after(SnakeMovement::Movement),
                 )
                 .with_system(
                     snake_grow
                         .label(SnakeMovement::Growth)
-                        .after(SnakeMovement::Eating)
-                )
+                        .after(SnakeMovement::Eating),
+                ),
         )
         .add_system(position_translation)
         .add_system(size_scaling)
