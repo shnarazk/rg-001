@@ -1,7 +1,9 @@
 # Revising Snake Sample for Bevy 0.X (in Japanese)
 
-![](https://github.com/shnarazk/rg-001/commit/a0b55ab9cf1b261e02694cfbb20ae1f1393e2efe#R10-R20)
+## 1.
 
-`add_*_system`において`.system()`は不要になった。
+- `add_*_system`において`.system()`は不要になった。
+
+https://github.com/shnarazk/rg-001/blob/a0b55ab9cf1b261e02694cfbb20ae1f1393e2efe/src/bin/snake.rs#L10-L20
 
 
