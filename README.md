@@ -31,5 +31,6 @@ cargo run --release --bin snake
 ---
 
 ### other links
-- https://github.com/rg3dengine/rg3d
 
+- https://github.com/rg3dengine/rg3d
+- https://docs.godotengine.org/en/stable/getting_started/step_by_step/your_first_game.html
