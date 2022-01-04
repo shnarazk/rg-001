@@ -241,7 +241,23 @@ fn snake_grow(
 //
 // food
 //
-fn food_spawner(mut commands: Commands, materials: Res<Materials>) {
+fn food_spawner(
+    mut commands: Commands,
+    materials: Res<Materials>,
+    positions: Query<&mut Position>,
+    segments: Res<SnakeSegments>,
+) {
+    let x = (random::<u32>() % ARENA_WIDTH) as i32;
+    let y = (random::<u32>() % ARENA_HEIGHT) as i32;
+
+    if segments
+        .0
+        .iter()
+        .map(|e| *positions.get(*e).unwrap())
+        .any(|pos| pos.x == x && pos.y == y)
+    {
+        return;
+    }
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
