@@ -6,6 +6,10 @@
 
 ## Convert 'Dodge' (your first Godot game) to the latest Bevy
 
+```
+cargo run --release --bin dodge
+```
+
 under construction
 
 - [Your first game](https://docs.godotengine.org/en/stable/getting_started/step_by_step/your_first_game.html)

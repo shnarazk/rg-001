@@ -1,5 +1,6 @@
-#![allow(unused)]
-use bevy::{asset::LoadState, input::system::exit_on_esc_system, prelude::*};
+// #![allow(unused)]
+use bevy::{asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*};
+use rand::prelude::random;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum AppState {
@@ -25,9 +26,14 @@ fn main() {
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_enemy))
-        // .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_player))
-        // .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_enemy))
-        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_character))
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(0.55))
+                .with_system(setup_enemy),
+        )
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_player))
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_enemy))
+        // .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_character))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(track_mouse_movement))
         .add_system(exit_on_esc_system)
         .run()
@@ -57,13 +63,17 @@ impl Character {
             trans_y: 0.0,
         }
     }
+    fn with_direction(mut self, x: f32, y: f32) -> Self {
+        self.diff_x = x;
+        self.diff_y = y;
+        self
+    }
 }
 
 // (from 'sprite_sheet')
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, dead_code)]
 fn animate_character(
     time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<(
         &mut Character,
         &mut Timer,
@@ -129,7 +139,6 @@ fn setup_player(
 #[allow(clippy::type_complexity)]
 fn animate_player(
     time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<
         (
             &mut Character,
@@ -161,7 +170,7 @@ struct Enemy;
 
 fn setup_enemy(
     mut commands: Commands,
-    // config: Res<WindowDescriptor>,
+    config: Res<WindowDescriptor>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Image>>,
@@ -184,10 +193,41 @@ fn setup_enemy(
     let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas.clone());
 
+    let mut px = 0.5 * random::<f32>() * config.width;
+    let mut py = 0.5 * random::<f32>() * config.height;
+    let mut dx;
+    let mut dy;
+    match (random::<f32>() * 4.0) as usize {
+        1 => {
+            px = config.width * 0.5 - 40.0;
+            dx = -1.0;
+            dy = random::<f32>() - 0.5;
+        }
+        2 => {
+            px = -(config.width * 0.5 - 40.0);
+            dx = 1.0;
+            dy = random::<f32>() - 0.5;
+        }
+        3 => {
+            py = config.height * 0.5 - 40.0;
+            dx = random::<f32>() - 0.5;
+            dy = -1.0;
+        }
+        _ => {
+            py = -(config.height * 0.5 - 40.0);
+            dx = random::<f32>() - 0.5;
+            dy = 1.0;
+        }
+    }
+    const SPEED: f32 = 7.5;
+    let dist: f32 = (dx.powi(2) + dy.powi(2)).sqrt();
+    assert!(dist < 2.0);
+    dx *= SPEED / dist;
+    dy *= SPEED / dist;
     commands
         .spawn_bundle(SpriteSheetBundle {
             transform: Transform {
-                translation: Vec3::new(-100.0, 0.0, 0.0),
+                translation: Vec3::new(px, py, 0.0),
                 scale: Vec3::splat(0.5),
                 ..Default::default()
             },
@@ -196,17 +236,19 @@ fn setup_enemy(
             ..Default::default()
         })
         .insert(Timer::from_seconds(0.15, true))
-        .insert(Character::from(texture_atlas))
+        .insert(Character::from(texture_atlas).with_direction(dx, dy))
         .insert(Enemy);
 }
 
 // (from 'sprite_sheet')
 #[allow(clippy::type_complexity)]
 fn animate_enemy(
+    // mut commands: Commands,
+    config: Res<WindowDescriptor>,
     time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<
         (
+            // Entity,
             &mut Character,
             &mut Timer,
             &mut Transform,
@@ -220,10 +262,52 @@ fn animate_enemy(
         trans.translation.y += enemy.diff_y;
         enemy.trans_x = trans.translation.x;
         enemy.trans_y = trans.translation.y;
+        if 0.5 * config.width < enemy.trans_x.abs() && 0.5 * config.height < enemy.trans_y.abs() {
+            // commands.entity(ent).despawn();
+
+            let mut px = 0.5 * random::<f32>() * config.width;
+            let mut py = 0.5 * random::<f32>() * config.height;
+            let mut dx;
+            let mut dy;
+            match (random::<f32>() * 4.0) as usize {
+                1 => {
+                    px = config.width * 0.5 - 40.0;
+                    dx = -1.0;
+                    dy = random::<f32>() - 0.5;
+                }
+                2 => {
+                    px = -(config.width * 0.5 - 40.0);
+                    dx = 1.0;
+                    dy = random::<f32>() - 0.5;
+                }
+                3 => {
+                    py = config.height * 0.5 - 40.0;
+                    dx = random::<f32>() - 0.5;
+                    dy = -1.0;
+                }
+                _ => {
+                    py = -(config.height * 0.5 - 40.0);
+                    dx = random::<f32>() - 0.5;
+                    dy = 1.0;
+                }
+            }
+            const SPEED: f32 = 7.5;
+            let dist: f32 = (dx.powi(2) + dy.powi(2)).sqrt();
+            // assert!(dist < 2.0);
+            dx *= SPEED / dist;
+            dy *= SPEED / dist;
+
+            trans.translation.x = px;
+            trans.translation.y = py;
+            enemy.trans_x = px;
+            enemy.trans_y = py;
+            enemy.diff_x = dx;
+            enemy.diff_y = dy;
+        }
         timer.tick(time.delta());
         if timer.finished() {
             sprite.index = (sprite.index + 1) % enemy.texture_atlas.textures.len();
-            sprite.flip_x = enemy.flip;
+            sprite.flip_x = enemy.diff_x < 0.0;
         }
     }
 }
