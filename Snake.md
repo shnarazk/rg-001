@@ -1,5 +1,7 @@
 # Revising Snake Sample for Bevy 0.X (in Japanese)
 
+- https://mbuffett.com/posts/bevy-snake-tutorial/
+
 最新のBevy(main branch)をキャッチアップ。
 
 ## **An empty bevy app** and **Createing a window**
@@ -9,11 +11,9 @@
 
 ```diff
   fn main() {
-+     App::build()
+-     App::build()
 +     App::new()
            ...
-          .add_event::<GrowthEvent>()
-          .add_event::<GameOverEvent>()
           .add_plugins(DefaultPlugins)
 -         .add_startup_system(setup.system())
 +         .add_startup_system(setup)
