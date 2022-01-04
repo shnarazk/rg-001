@@ -1,5 +1,5 @@
 #![allow(unused)]
-use bevy::{asset::LoadState, prelude::*};
+use bevy::{asset::LoadState, prelude::*, input::system::exit_on_esc_system};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum AppState {
@@ -9,6 +9,12 @@ enum AppState {
 
 fn main() {
     App::new()
+        .insert_resource(WindowDescriptor {
+            title: "Dodge!".to_string(),
+            width: 1400.0,
+            height: 800.0,
+            ..Default::default()
+        })
         .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
         .init_resource::<CharacterSpriteHandles>()
         .add_plugins(DefaultPlugins)
@@ -23,6 +29,7 @@ fn main() {
         // .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_enemy))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_character))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(track_mouse_movement))
+        .add_system(exit_on_esc_system)
         .run()
 }
 
@@ -107,7 +114,7 @@ fn setup_player(
     commands
         .spawn_bundle(SpriteSheetBundle {
             transform: Transform {
-                scale: Vec3::splat(0.75),
+                scale: Vec3::splat(0.5),
                 ..Default::default()
             },
             sprite: TextureAtlasSprite::new(vendor_index),
@@ -156,6 +163,7 @@ struct Enemy;
 
 fn setup_enemy(
     mut commands: Commands,
+    // config: Res<WindowDescriptor>,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Image>>,
@@ -181,7 +189,8 @@ fn setup_enemy(
     commands
         .spawn_bundle(SpriteSheetBundle {
             transform: Transform {
-                scale: Vec3::splat(0.75),
+                translation: Vec3::new(-100.0, 0.0, 0.0),
+                scale: Vec3::splat(0.5),
                 ..Default::default()
             },
             sprite: TextureAtlasSprite::new(vendor_index),
