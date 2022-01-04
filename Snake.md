@@ -54,3 +54,7 @@ https://github.com/shnarazk/rg-001/blob/a0b55ab9cf1b261e02694cfbb20ae1f1393e2efe
           .id()
 }
 ```
+
+## Somewhere
+
+- `Query`がコンフリクトする箇所がある。このような時は`QuerySet`で一つにまとめるとよい。Snake.rsでは最終的に使ってないが途中では使った。
