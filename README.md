@@ -17,8 +17,7 @@ cargo run --release --bin dodge
 ```
 
 - [Notes](https://github.com/shnarazk/rg-001/blob/main/Dodge.md) (under construction)
-- [Your first game](https://docs.godotengine.org/en/stable/getting_started/step_by_step/your_first_
-game.html)
+- [Your first game](https://docs.godotengine.org/en/stable/getting_started/step_by_step/your_first_game.html) with [Godot](https://godotengine.org/)
 
 ## Adapt Snake to the latest Bevy
 
