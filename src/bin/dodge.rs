@@ -171,8 +171,17 @@ fn animate_player(
 //
 // Enemy
 //
-#[derive(Component, Debug, Default)]
-struct Enemy;
+#[derive(Debug)]
+enum EnemyKind {
+    Fly,
+    Swim,
+    Walk,
+}
+
+#[derive(Component, Debug)]
+struct Enemy {
+    kind: EnemyKind,
+}
 
 fn setup_enemy(
     mut commands: Commands,
@@ -182,20 +191,40 @@ fn setup_enemy(
     mut textures: ResMut<Assets<Image>>,
 ) {
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
-    for handle in [
-        asset_server.get_handle("dodge/art/enemyFlyingAlt_1.png"),
-        asset_server.get_handle("dodge/art/enemyFlyingAlt_2.png"),
-        asset_server.get_handle("dodge/art/enemySwimming_1.png"),
-        asset_server.get_handle("dodge/art/enemySwimming_2.png"),
-        asset_server.get_handle("dodge/art/enemyWalking_1.png"),
-        asset_server.get_handle("dodge/art/enemyWalking_2.png"),
-    ] {
+    let (kind, sprites) = match (random::<f32>() * 3.0) as usize {
+        1 => (
+            EnemyKind::Swim,
+            [
+                asset_server.get_handle("dodge/art/enemySwimming_1.png"),
+                asset_server.get_handle("dodge/art/enemySwimming_2.png"),
+            ],
+        ),
+        2 => (
+            EnemyKind::Walk,
+            [
+                asset_server.get_handle("dodge/art/enemyWalking_1.png"),
+                asset_server.get_handle("dodge/art/enemyWalking_2.png"),
+            ],
+        ),
+        _ => (
+            EnemyKind::Fly,
+            [
+                asset_server.get_handle("dodge/art/enemyFlyingAlt_1.png"),
+                asset_server.get_handle("dodge/art/enemyFlyingAlt_2.png"),
+            ],
+        ),
+    };
+    for handle in sprites {
         if let Some(image) = textures.get(&handle) {
             texture_atlas_builder.add_texture(handle.clone_weak(), image);
         }
     }
     let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
-    let vendor_handle = asset_server.load("dodge/art/enemyWalking_1.png");
+    let vendor_handle = match kind {
+        EnemyKind::Fly => asset_server.load("dodge/art/enemyFlyingAlt_1.png"),
+        EnemyKind::Swim => asset_server.load("dodge/art/enemySwimming_1.png"),
+        EnemyKind::Walk => asset_server.load("dodge/art/enemyWalking_1.png"),
+    };
     let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas.clone());
 
@@ -243,7 +272,7 @@ fn setup_enemy(
         })
         .insert(Timer::from_seconds(0.15, true))
         .insert(Character::from(texture_atlas).with_direction(dx, dy))
-        .insert(Enemy);
+        .insert(Enemy { kind });
 }
 
 // (from 'sprite_sheet')
@@ -252,18 +281,16 @@ fn animate_enemy(
     // mut commands: Commands,
     config: Res<WindowDescriptor>,
     time: Res<Time>,
-    mut query: Query<
-        (
-            // Entity,
-            &mut Character,
-            &mut Timer,
-            &mut Transform,
-            &mut TextureAtlasSprite,
-        ),
-        With<Enemy>,
-    >,
+    mut query: Query<(
+        // Entity,
+        &mut Character,
+        &mut Timer,
+        &mut Transform,
+        &mut TextureAtlasSprite,
+        &Enemy,
+    )>,
 ) {
-    for (mut enemy, mut timer, mut trans, mut sprite) in query.iter_mut() {
+    for (mut enemy, mut timer, mut trans, mut sprite, et) in query.iter_mut() {
         trans.translation.x += enemy.diff_x;
         trans.translation.y += enemy.diff_y;
         trans.rotation = Quat::from_rotation_z(enemy.diff_y.atan2(enemy.diff_x));
@@ -298,10 +325,14 @@ fn animate_enemy(
                     dy = 1.0;
                 }
             }
-            const SPEED: f32 = 7.5;
+            let speed: f32 = match et.kind {
+                EnemyKind::Fly => 9.0,
+                EnemyKind::Swim => 6.2,
+                EnemyKind::Walk => 4.0,
+            };
             let dist: f32 = (dx.powi(2) + dy.powi(2)).sqrt();
-            dx *= SPEED / dist;
-            dy *= SPEED / dist;
+            dx *= speed / dist;
+            dy *= speed / dist;
 
             trans.translation.x = px;
             trans.translation.y = py;
@@ -331,7 +362,9 @@ fn load_textures(
     asset_server: Res<AssetServer>,
 ) {
     sprite_handles.handles = asset_server.load_folder("dodge/art").unwrap();
-    sprite_handles.handles.append(&mut asset_server.load_folder("sprites").unwrap());
+    sprite_handles
+        .handles
+        .append(&mut asset_server.load_folder("sprites").unwrap());
 }
 
 fn check_textures(

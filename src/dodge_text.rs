@@ -56,10 +56,7 @@ fn setup_simple(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(ScoreLabel);
 }
 
-fn simple_text_update(
-    time: Res<Time>,
-    mut query: Query<&mut Text, With<ScoreLabel>>,
-) {
+fn simple_text_update(time: Res<Time>, mut query: Query<&mut Text, With<ScoreLabel>>) {
     let seconds = time.seconds_since_startup() as f32;
     for mut text in query.iter_mut() {
         text.sections[1].value = format!("{}", seconds as u32);
