@@ -13,7 +13,7 @@ fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
             title: "Dodge!".to_string(),
-            width: 1400.0,
+            width: 1200.0,
             height: 800.0,
             ..Default::default()
         })
@@ -24,11 +24,14 @@ fn main() {
         .add_state(AppState::Setup)
         // from 'state'
         .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
-        // .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(setup_bgm))
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
         // .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_enemy))
+        .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(play_bgm))
+        .add_system_set(SystemSet::on_update(AppState::Ready)
+                        .with_run_criteria(FixedTimestep::step(25.5))
+                        .with_system(play_bgm))
         .add_system_set(
             SystemSet::on_update(AppState::Ready)
                 .with_run_criteria(FixedTimestep::step(0.55))
@@ -428,7 +431,7 @@ fn setup_cammera(mut commands: Commands) {
 // BGM
 //
 #[allow(dead_code)]
-fn setup_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
+fn play_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
     let music = asset_server.load("dodge/art/House In a Forest Loop.ogg");
     audio.play(music);
 }
