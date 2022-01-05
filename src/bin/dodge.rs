@@ -334,11 +334,11 @@ fn load_textures(
 
 fn check_textures(
     mut state: ResMut<State<AppState>>,
-    rpg_sprite_handles: ResMut<CharacterSpriteHandles>,
+    sprite_handles: ResMut<CharacterSpriteHandles>,
     asset_server: Res<AssetServer>,
 ) {
     if let LoadState::Loaded =
-        asset_server.get_group_load_state(rpg_sprite_handles.handles.iter().map(|handle| handle.id))
+        asset_server.get_group_load_state(sprite_handles.handles.iter().map(|handle| handle.id))
     {
         state.set(AppState::Ready).unwrap();
     }
