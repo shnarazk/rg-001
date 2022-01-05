@@ -18,7 +18,7 @@
 cargo run --release --bin dodge
 ```
 
-- [Notes](https://github.com/shnarazk/rg-001/blob/main/Dodge.md) (under construction)
+- [メモ;Notes in Japanese](https://github.com/shnarazk/rg-001/blob/main/Dodge.md) (under construction)
 - [Your first game](https://docs.godotengine.org/en/stable/getting_started/step_by_step/your_first_game.html) with [Godot](https://godotengine.org/)
 
 ## Adapt Snake to the latest Bevy
@@ -30,7 +30,7 @@ cargo run --release --bin snake
 ```
 
 - [Creating a Snake Clone in Rust, with Bevy](https://mbuffett.com/posts/bevy-snake-tutorial/)
-- [Updating Snake](https://github.com/shnarazk/rg-001/blob/main/Snake.md)
+- [変更点;Updating Snake in Japanese](https://github.com/shnarazk/rg-001/blob/main/Snake.md)
 
 ---
 
