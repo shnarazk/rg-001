@@ -16,7 +16,7 @@ fn main() {
             height: 800.0,
             ..Default::default()
         })
-        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        .insert_resource(ClearColor(Color::rgb(0.6, 0.8, 1.0)))
         .init_resource::<CharacterSpriteHandles>()
         .add_plugins(DefaultPlugins)
         .add_state(AppState::Setup)
@@ -108,21 +108,24 @@ fn setup_player(
     mut textures: ResMut<Assets<Image>>,
 ) {
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
-    let texture0: Handle<Image> = asset_server.get_handle("dodge/art/playerGrey_walk1.png");
-    let texture1: Handle<Image> = asset_server.get_handle("dodge/art/playerGrey_walk2.png");
-    for handle in [texture0, texture1] {
+    for handle in [
+        asset_server.get_handle("sprites/bevy_logo_dark_1.png"),
+        asset_server.get_handle("sprites/bevy_logo_dark_2.png"),
+        asset_server.get_handle("sprites/bevy_logo_dark_3.png"),
+    ] {
         if let Some(image) = textures.get(&handle) {
             texture_atlas_builder.add_texture(handle.clone_weak(), image);
         }
     }
     let texture_atlas = texture_atlas_builder.finish(&mut textures).unwrap();
-    let vendor_handle = asset_server.load("dodge/art/playerGrey_walk1.png");
+    let vendor_handle = asset_server.load("sprites/bevy_logo_dark_1.png");
     let vendor_index = texture_atlas.get_texture_index(&vendor_handle).unwrap();
     let atlas_handle = texture_atlases.add(texture_atlas.clone());
 
     commands
         .spawn_bundle(SpriteSheetBundle {
             transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 0.2),
                 scale: Vec3::splat(0.5),
                 ..Default::default()
             },
@@ -227,7 +230,7 @@ fn setup_enemy(
     commands
         .spawn_bundle(SpriteSheetBundle {
             transform: Transform {
-                translation: Vec3::new(px, py, 0.0),
+                translation: Vec3::new(px, py, 0.3),
                 scale: Vec3::splat(0.5),
                 ..Default::default()
             },
@@ -321,10 +324,11 @@ struct CharacterSpriteHandles {
 }
 
 fn load_textures(
-    mut rpg_sprite_handles: ResMut<CharacterSpriteHandles>,
+    mut sprite_handles: ResMut<CharacterSpriteHandles>,
     asset_server: Res<AssetServer>,
 ) {
-    rpg_sprite_handles.handles = asset_server.load_folder("dodge/art").unwrap();
+    sprite_handles.handles = asset_server.load_folder("dodge/art").unwrap();
+    sprite_handles.handles.append(&mut asset_server.load_folder("sprites").unwrap());
 }
 
 fn check_textures(
