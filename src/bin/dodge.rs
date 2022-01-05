@@ -22,6 +22,7 @@ fn main() {
         .add_state(AppState::Setup)
         // from 'state'
         .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
+        // .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(setup_bgm))
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
@@ -386,4 +387,13 @@ fn setup_cammera(mut commands: Commands) {
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(MainCamera);
+}
+
+//
+// BGM
+//
+#[allow(dead_code)]
+fn setup_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
+    let music = asset_server.load("dodge/art/House In a Forest Loop.ogg");
+    audio.play(music);
 }
