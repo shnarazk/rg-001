@@ -12,6 +12,8 @@
 
 ## Adapt 'Dodge' (your first Godot game) to the latest Bevy
 
+ほぼ移植終了。機能追加検討中。
+
 ```
 cargo run --release --bin dodge
 ```
@@ -20,6 +22,8 @@ cargo run --release --bin dodge
 - [Your first game](https://docs.godotengine.org/en/stable/getting_started/step_by_step/your_first_game.html) with [Godot](https://godotengine.org/)
 
 ## Adapt Snake to the latest Bevy
+
+移植終了。
 
 ```
 cargo run --release --bin snake
