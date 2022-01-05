@@ -2,7 +2,9 @@
 
 ### Sprite animation
 
-スプライトアニメーションは、SpriteAtlasに一つずつロード。定期的に切り替えていけばアニメーションにはなる。ただし、ロードが終了するまでゲーム開始を待ってくれないので、準備が終わったかどうかをstageを使って表現しないといけない。
+スプライトアニメーションは、SpriteAtlasに一つずつロード。定期的に切り替えていけばアニメーションにはなる。
+- (2022-01-05) ただし、ロードが終了するまでゲーム開始を待ってくれないので、準備が終わったかどうかをstageを使って表現しないといけない。
+- (2022-01-06) Resourceとして最初にロードしてしまえば、stagingは要らないようだ。ということを[Rhythm game in Rust using Bevy](https://caballerocoll.com/blog/bevy-rhythm-game/)のどこかで見たはずなんだが見当たらない。
 
 ```rust
     .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
