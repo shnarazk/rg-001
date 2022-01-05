@@ -1,6 +1,7 @@
 // #![allow(unused)]
 use bevy::{asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*};
 use rand::prelude::random;
+use rg_001::dodge_text::ScorePlugin;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum AppState {
@@ -19,6 +20,7 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.6, 0.8, 1.0)))
         .init_resource::<CharacterSpriteHandles>()
         .add_plugins(DefaultPlugins)
+        .add_plugin(ScorePlugin)
         .add_state(AppState::Setup)
         // from 'state'
         .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
