@@ -260,6 +260,7 @@ fn animate_enemy(
     for (mut enemy, mut timer, mut trans, mut sprite) in query.iter_mut() {
         trans.translation.x += enemy.diff_x;
         trans.translation.y += enemy.diff_y;
+        trans.rotation = Quat::from_rotation_z(enemy.diff_y.atan2(enemy.diff_x));
         enemy.trans_x = trans.translation.x;
         enemy.trans_y = trans.translation.y;
         if 0.5 * config.width < enemy.trans_x.abs() && 0.5 * config.height < enemy.trans_y.abs() {
@@ -293,7 +294,6 @@ fn animate_enemy(
             }
             const SPEED: f32 = 7.5;
             let dist: f32 = (dx.powi(2) + dy.powi(2)).sqrt();
-            // assert!(dist < 2.0);
             dx *= SPEED / dist;
             dy *= SPEED / dist;
 
@@ -307,7 +307,6 @@ fn animate_enemy(
         timer.tick(time.delta());
         if timer.finished() {
             sprite.index = (sprite.index + 1) % enemy.texture_atlas.textures.len();
-            sprite.flip_x = enemy.diff_x < 0.0;
         }
     }
 }
