@@ -1,7 +1,7 @@
 // #![allow(unused)]
 use bevy::{
     asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*,
-    sprite::collide_aabb::collide,
+    sprite::collide_aabb::collide, render::camera,
 };
 use rand::prelude::random;
 use rg_001::dodge_text::{ScoreLabel, ScorePlugin};
@@ -26,6 +26,7 @@ fn main() {
         .init_resource::<GameResourceHandles>()
         .add_plugins(DefaultPlugins)
         .add_plugin(ScorePlugin)
+        .add_event::<CollisionEvent>()
         .add_state(AppState::Setup)
         // from 'state'
         .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_assets))
@@ -35,7 +36,7 @@ fn main() {
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(play_bgm))
         .add_system_set(
             SystemSet::on_update(AppState::Ready)
-                .with_run_criteria(FixedTimestep::step(25.5))
+                .with_run_criteria(FixedTimestep::step(60.0 /* 25.5 */))
                 .with_system(play_bgm),
         )
         .add_system_set(
@@ -43,6 +44,8 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(0.55))
                 .with_system(setup_enemy),
         )
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(shake_camera))
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_camera))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_player))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_enemy))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(check_collision))
@@ -377,11 +380,14 @@ fn animate_enemy(
 //
 // Collision detection
 //
+struct CollisionEvent;
+
 fn check_collision(
     mut player_query: Query<(&Transform, &mut Player)>,
     collider_query: Query<(&Transform, &Enemy)>,
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
+    mut collision_channel: EventWriter<CollisionEvent>,
 ) {
     let (player_trans, mut player) = player_query.single_mut();
     // let player_size = player_trans.scale.truncate();
@@ -395,6 +401,7 @@ fn check_collision(
             enemy_trans.translation,
             Vec2::new(40.0, 40.0), // enemy_trans.scale.truncate(),
         ) {
+            collision_channel.send(CollisionEvent);
             player.score *= 0.5;
             if player.score < 1.0 {
                 // should be game over by shifting to the next stage
@@ -493,12 +500,40 @@ fn update_score(
 // Camera
 //
 #[derive(Component, Debug, Default)]
-struct MainCamera;
+struct MainCamera {
+    shaker: Option<u32>,
+}
 
 fn setup_cammera(mut commands: Commands) {
     commands
         .spawn_bundle(OrthographicCameraBundle::new_2d())
-        .insert(MainCamera);
+        .insert(MainCamera::default());
+}
+
+fn shake_camera(
+    mut camera_query: Query<&mut MainCamera>,
+    mut collision_event: EventReader<CollisionEvent>,
+) {
+    if collision_event.iter().next().is_some() {
+        let camera: &mut MainCamera = &mut camera_query.single_mut();
+        if camera.shaker.is_none() {
+            camera.shaker = Some(20);
+        }
+    }
+}
+
+fn animate_camera(
+    mut query: Query<(&mut Transform, &mut MainCamera)>,
+) {
+    let (mut trans, mut camera) = query.single_mut();
+    if let Some(n) = camera.shaker {
+        if 0 < n {
+            camera.shaker = Some(n - 1);
+            trans.rotation = Quat::from_rotation_z(n as f32 * 0.05 * std::f32::consts::PI);
+        } else {
+            camera.shaker = None;
+        }
+    }
 }
 
 //
