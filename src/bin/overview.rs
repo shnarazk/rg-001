@@ -22,14 +22,11 @@ fn main() {
 
 fn setup(
     mut commands: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
     let society_mesh = asset_server.load("models/society.glb#Mesh0/Primitive0");
-    let material_handle = materials.add(StandardMaterial {
-        base_color: Color::rgb(0.4, 0.8, 0.9),
-        ..Default::default()
-    });
+    let material_handle = asset_server.load("models/society.glb#Material0");
     commands.spawn_bundle(PbrBundle {
         mesh: society_mesh,
         material: material_handle,
