@@ -416,6 +416,17 @@ struct CharacterSpriteHandles {
     handles: Vec<HandleUntyped>,
 }
 
+// impl FromWorld for CharacterSpriteHandles {
+//     fn from_world(world: &mut World) -> Self {
+//         let world = world.cell();
+//         let asset_server = world.get_resource::<AssetServer>().unwrap();
+//         asset_server.watch_for_changes().unwrap();
+//         let mut handles = asset_server.load_folder("dodge/art").unwrap();
+//         handles.append(&mut asset_server.load_folder("sprites").unwrap());
+//         Self { handles }
+//     }
+// }
+
 fn load_assets(
     mut sprite_handles: ResMut<CharacterSpriteHandles>,
     asset_server: ResMut<AssetServer>,

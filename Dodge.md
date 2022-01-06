@@ -4,9 +4,6 @@
 
 スプライトアニメーションは、SpriteAtlasに一つずつロード。定期的に切り替えていけばアニメーションにはなる。
 - (2022-01-05) ただし、ロードが終了するまでゲーム開始を待ってくれないので、準備が終わったかどうかをstageを使って表現しないといけない。
-- (2022-01-06) Resourceとして最初にロードしてしまえば、stagingは要らないんじゃないかと思ったのだが、勘違いだったようだ。Bevyのmanualから引用するけど、使う前にロードできるとは書いてない(`AssetServer`がいないのだ。`DefaultPlugins`の後ならありそうな気がしたのだけど甘かった)。
-
-> A resource in Bevy represents globally unique data. Resources must be added to Bevy Apps before using them. This happens with insert_resource. (pub fn insert_resource)
 
 ```rust
     .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
@@ -26,6 +23,35 @@ fn check_textures(
     }
 }
 ```
+
+- (2022-01-06) Resourceとして最初にロードしてしまえば、stagingは要らないんじゃないかと思ったのだが、勘違いだったようだ。Bevyのmanualから引用するけど、使う前にロードできるとは書いてない(`AssetServer`がいないのだ。`DefaultPlugins`の後ならありそうな気がしたのだけど甘かった)。
+
+> A resource in Bevy represents globally unique data. Resources must be added to Bevy Apps before using them. This happens with insert_resource. (pub fn insert_resource)
+
+- (2022-01-07)
+
+[examples/shader/shader_instancing.rs](https://github.com/bevyengine/bevy/blob/507441d96f83355cdab578d85f804f4bf8d835c9/examples/shader/shader_instancing.rs#L154-L168)からこんなのを見つけたのだが、やっぱりリソースが読み込まれるまでstageで待たないといけなかった。
+
+```
+impl FromWorld for CustomPipeline {
+    fn from_world(world: &mut World) -> Self {
+        let world = world.cell();
+        let asset_server = world.get_resource::<AssetServer>().unwrap();
+        asset_server.watch_for_changes().unwrap();
+        let shader = asset_server.load("shaders/instancing.wgsl");
+
+
+        let mesh_pipeline = world.get_resource::<MeshPipeline>().unwrap();
+
+
+        CustomPipeline {
+            shader,
+            mesh_pipeline: mesh_pipeline.clone(),
+        }
+    }
+}
+```
+
 
 ### F-curve (ease in/out)
 
@@ -79,5 +105,3 @@ fn animate_player(
 ### BGM
 
 BGM：同梱のプラグインはmp3だけでなくoggも再生できるけどリピート再生できないので、[bevy_kira_audio](https://github.com/NiklasEi/bevy_kira_audio)に変えるしかなさそう。あるいは曲長のタイマーを仕掛けるしか。。。
-
-
