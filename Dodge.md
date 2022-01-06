@@ -4,7 +4,9 @@
 
 スプライトアニメーションは、SpriteAtlasに一つずつロード。定期的に切り替えていけばアニメーションにはなる。
 - (2022-01-05) ただし、ロードが終了するまでゲーム開始を待ってくれないので、準備が終わったかどうかをstageを使って表現しないといけない。
-- (2022-01-06) Resourceとして最初にロードしてしまえば、stagingは要らないようだ。ということを[Rhythm game in Rust using Bevy](https://caballerocoll.com/blog/bevy-rhythm-game/)のどこかで見たはずなんだが見当たらない。
+- (2022-01-06) Resourceとして最初にロードしてしまえば、stagingは要らないんじゃないかと思ったのだが、勘違いだったようだ。Bevyのmanualから引用するけど、使う前にロードできるとは書いてない(`AssetServer`がいないのだ。`DefaultPlugins`の後ならありそうな気がしたのだけど甘かった)。
+
+> A resource in Bevy represents globally unique data. Resources must be added to Bevy Apps before using them. This happens with insert_resource. (pub fn insert_resource)
 
 ```rust
     .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
