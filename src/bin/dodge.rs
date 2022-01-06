@@ -23,7 +23,7 @@ fn main() {
             ..Default::default()
         })
         .insert_resource(ClearColor(Color::rgb(0.6, 0.8, 1.0)))
-        .init_resource::<CharacterSpriteHandles>()
+        .init_resource::<GameResourceHandles>()
         .add_plugins(DefaultPlugins)
         .add_plugin(ScorePlugin)
         .add_state(AppState::Setup)
@@ -32,7 +32,6 @@ fn main() {
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
-        // .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_enemy))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(play_bgm))
         .add_system_set(
             SystemSet::on_update(AppState::Ready)
@@ -47,7 +46,6 @@ fn main() {
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_player))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_enemy))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(check_collision))
-        // .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_character))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(track_mouse_movement))
         .add_system_set(
             SystemSet::on_update(AppState::Ready)
@@ -400,9 +398,9 @@ fn check_collision(
             player.score *= 0.5;
             if player.score < 1.0 {
                 // should be game over by shifting to the next stage
+            } else {
+                audio.play(asset_server.get_handle("sound/forceField_000.ogg"));
             }
-            let se = asset_server.get_handle("mixkit-8-bit-bomb-explosion-2811.ogg");
-            audio.play(se);
         }
     }
 }
@@ -412,8 +410,9 @@ fn check_collision(
 //
 // (from texture_atlas)
 #[derive(Default)]
-struct CharacterSpriteHandles {
-    handles: Vec<HandleUntyped>,
+struct GameResourceHandles {
+    sprites: Vec<HandleUntyped>,
+    sounds: Vec<HandleUntyped>,
 }
 
 // impl FromWorld for CharacterSpriteHandles {
@@ -427,23 +426,21 @@ struct CharacterSpriteHandles {
 //     }
 // }
 
-fn load_assets(
-    mut sprite_handles: ResMut<CharacterSpriteHandles>,
-    asset_server: ResMut<AssetServer>,
-) {
-    sprite_handles.handles = asset_server.load_folder("dodge/art").unwrap();
-    sprite_handles
-        .handles
+fn load_assets(mut handles: ResMut<GameResourceHandles>, asset_server: ResMut<AssetServer>) {
+    handles.sprites = asset_server.load_folder("dodge/art").unwrap();
+    handles
+        .sprites
         .append(&mut asset_server.load_folder("sprites").unwrap());
+    handles.sounds = asset_server.load_folder("sound").unwrap();
 }
 
 fn check_textures(
     mut state: ResMut<State<AppState>>,
-    sprite_handles: ResMut<CharacterSpriteHandles>,
+    sprite_handles: ResMut<GameResourceHandles>,
     asset_server: Res<AssetServer>,
 ) {
     if let LoadState::Loaded =
-        asset_server.get_group_load_state(sprite_handles.handles.iter().map(|handle| handle.id))
+        asset_server.get_group_load_state(sprite_handles.sprites.iter().map(|handle| handle.id))
     {
         state.set(AppState::Ready).unwrap();
     }
@@ -509,6 +506,7 @@ fn setup_cammera(mut commands: Commands) {
 //
 #[allow(dead_code)]
 fn play_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    let music = asset_server.get_handle("dodge/art/House In a Forest Loop.ogg");
+    // let music = asset_server.get_handle("dodge/art/House In a Forest Loop.ogg");
+    let music = asset_server.get_handle("sound/Windless Slopes.ogg");
     audio.play(music);
 }
