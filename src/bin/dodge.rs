@@ -28,7 +28,7 @@ fn main() {
         .add_plugin(ScorePlugin)
         .add_state(AppState::Setup)
         // from 'state'
-        .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_textures))
+        .add_system_set(SystemSet::on_enter(AppState::Setup).with_system(load_assets))
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(check_textures))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_cammera))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
@@ -199,6 +199,7 @@ enum EnemyKind {
 #[derive(Component, Debug)]
 struct Enemy {
     kind: EnemyKind,
+    collided: bool,
 }
 
 fn setup_enemy(
@@ -290,7 +291,7 @@ fn setup_enemy(
         })
         .insert(Timer::from_seconds(0.15, true))
         .insert(Character::from(texture_atlas).with_direction(dx, dy))
-        .insert(Enemy { kind });
+        .insert(Enemy { kind, collided: false });
 }
 
 // (from 'sprite_sheet')
@@ -305,15 +306,17 @@ fn animate_enemy(
         &mut Timer,
         &mut Transform,
         &mut TextureAtlasSprite,
-        &Enemy,
+        &mut Enemy,
     )>,
 ) {
-    for (mut enemy, mut timer, mut trans, mut sprite, et) in query.iter_mut() {
+    for (mut enemy, mut timer, mut trans, mut sprite, mut et) in query.iter_mut() {
         trans.translation.x += enemy.diff_x;
         trans.translation.y += enemy.diff_y;
         trans.rotation = Quat::from_rotation_z(enemy.diff_y.atan2(enemy.diff_x));
         enemy.trans_x = trans.translation.x;
         enemy.trans_y = trans.translation.y;
+        enemy.diff_x *= 1.01;
+        enemy.diff_y *= 1.01;
         if 0.5 * config.width < enemy.trans_x.abs() && 0.5 * config.height < enemy.trans_y.abs() {
             // commands.entity(ent).despawn();
 
@@ -358,6 +361,7 @@ fn animate_enemy(
             enemy.trans_y = py;
             enemy.diff_x = dx;
             enemy.diff_y = dy;
+            et.collided = false;
         }
         timer.tick(time.delta());
         if timer.finished() {
@@ -371,11 +375,16 @@ fn animate_enemy(
 //
 fn check_collision(
     mut player_query: Query<(&Transform, &mut Player)>,
-    collider_query: Query<&Transform, With<Enemy>>,
+    collider_query: Query<(&Transform, &Enemy)>,
+    // asset_server: Res<AssetServer>,
+    // audio: Res<Audio>,
 ) {
     let (player_trans, mut player) = player_query.single_mut();
     // let player_size = player_trans.scale.truncate();
-    for enemy_trans in collider_query.iter() {
+    for (enemy_trans, enemy) in collider_query.iter() {
+        if enemy.collided {
+            continue;
+        }
         if let Some(_collision) = collide(
             player_trans.translation,
             Vec2::new(40.0, 40.0), // player_size,
@@ -383,6 +392,8 @@ fn check_collision(
             Vec2::new(40.0, 40.0), // enemy_trans.scale.truncate(),
         ) {
             player.score *= 0.5;
+            // let se = asset_server.get_handle("mixkit-8-bit-bomb-explosion-2811.ogg");
+            // audio.play(se);
         }
     }
 }
@@ -396,9 +407,9 @@ struct CharacterSpriteHandles {
     handles: Vec<HandleUntyped>,
 }
 
-fn load_textures(
+fn load_assets(
     mut sprite_handles: ResMut<CharacterSpriteHandles>,
-    asset_server: Res<AssetServer>,
+    asset_server: ResMut<AssetServer>,
 ) {
     sprite_handles.handles = asset_server.load_folder("dodge/art").unwrap();
     sprite_handles
@@ -478,6 +489,6 @@ fn setup_cammera(mut commands: Commands) {
 //
 #[allow(dead_code)]
 fn play_bgm(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    let music = asset_server.load("dodge/art/House In a Forest Loop.ogg");
+    let music = asset_server.get_handle("dodge/art/House In a Forest Loop.ogg");
     audio.play(music);
 }
