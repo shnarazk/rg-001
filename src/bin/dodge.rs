@@ -162,6 +162,7 @@ fn setup_player(
 // (from 'sprite_sheet')
 #[allow(clippy::type_complexity)]
 fn animate_player(
+    config: Res<WindowDescriptor>,
     time: Res<Time>,
     mut query: Query<
         (
@@ -174,8 +175,10 @@ fn animate_player(
     >,
 ) {
     for (mut player, mut timer, mut trans, mut sprite) in query.iter_mut() {
-        trans.translation.x += player.diff_x;
-        trans.translation.y += player.diff_y;
+        trans.translation.x =
+            (trans.translation.x + player.diff_x).clamp(-0.45 * config.width, 0.45 * config.width);
+        trans.translation.y = (trans.translation.y + player.diff_y)
+            .clamp(-0.45 * config.height, 0.45 * config.height);
         player.trans_x = trans.translation.x;
         player.trans_y = trans.translation.y;
         timer.tick(time.delta());
@@ -291,7 +294,10 @@ fn setup_enemy(
         })
         .insert(Timer::from_seconds(0.15, true))
         .insert(Character::from(texture_atlas).with_direction(dx, dy))
-        .insert(Enemy { kind, collided: false });
+        .insert(Enemy {
+            kind,
+            collided: false,
+        });
 }
 
 // (from 'sprite_sheet')
@@ -376,8 +382,8 @@ fn animate_enemy(
 fn check_collision(
     mut player_query: Query<(&Transform, &mut Player)>,
     collider_query: Query<(&Transform, &Enemy)>,
-    // asset_server: Res<AssetServer>,
-    // audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
 ) {
     let (player_trans, mut player) = player_query.single_mut();
     // let player_size = player_trans.scale.truncate();
@@ -392,8 +398,11 @@ fn check_collision(
             Vec2::new(40.0, 40.0), // enemy_trans.scale.truncate(),
         ) {
             player.score *= 0.5;
-            // let se = asset_server.get_handle("mixkit-8-bit-bomb-explosion-2811.ogg");
-            // audio.play(se);
+            if player.score < 1.0 {
+                // should be game over by shifting to the next stage
+            }
+            let se = asset_server.get_handle("mixkit-8-bit-bomb-explosion-2811.ogg");
+            audio.play(se);
         }
     }
 }
