@@ -3,8 +3,8 @@ pub struct ScorePlugin;
 
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_simple)
-            .add_system(simple_text_update);
+        app.add_startup_system(setup_simple);
+        // .add_system(simple_text_update);
     }
 }
 

@@ -1,7 +1,12 @@
 // #![allow(unused)]
-use bevy::{asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*};
+use bevy::{
+    asset::LoadState, core::FixedTimestep, input::system::exit_on_esc_system, prelude::*,
+    sprite::collide_aabb::collide,
+};
 use rand::prelude::random;
-use rg_001::dodge_text::ScorePlugin;
+use rg_001::dodge_text::{ScoreLabel, ScorePlugin};
+
+const Z_AXIS: f32 = 1.0;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum AppState {
@@ -29,9 +34,11 @@ fn main() {
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_player))
         // .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(setup_enemy))
         .add_system_set(SystemSet::on_enter(AppState::Ready).with_system(play_bgm))
-        .add_system_set(SystemSet::on_update(AppState::Ready)
-                        .with_run_criteria(FixedTimestep::step(25.5))
-                        .with_system(play_bgm))
+        .add_system_set(
+            SystemSet::on_update(AppState::Ready)
+                .with_run_criteria(FixedTimestep::step(25.5))
+                .with_system(play_bgm),
+        )
         .add_system_set(
             SystemSet::on_update(AppState::Ready)
                 .with_run_criteria(FixedTimestep::step(0.55))
@@ -39,8 +46,14 @@ fn main() {
         )
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_player))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_enemy))
+        .add_system_set(SystemSet::on_update(AppState::Ready).with_system(check_collision))
         // .add_system_set(SystemSet::on_update(AppState::Ready).with_system(animate_character))
         .add_system_set(SystemSet::on_update(AppState::Ready).with_system(track_mouse_movement))
+        .add_system_set(
+            SystemSet::on_update(AppState::Ready)
+                .with_run_criteria(FixedTimestep::step(1.0))
+                .with_system(update_score),
+        )
         .add_system(exit_on_esc_system)
         .run()
 }
@@ -105,7 +118,9 @@ fn animate_character(
 // Player
 //
 #[derive(Component, Debug, Default)]
-struct Player;
+struct Player {
+    score: f32,
+}
 
 fn setup_player(
     mut commands: Commands,
@@ -131,7 +146,7 @@ fn setup_player(
     commands
         .spawn_bundle(SpriteSheetBundle {
             transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 0.2),
+                translation: Vec3::new(0.0, 0.0, Z_AXIS),
                 scale: Vec3::splat(0.5),
                 ..Default::default()
             },
@@ -141,7 +156,7 @@ fn setup_player(
         })
         .insert(Timer::from_seconds(0.15, true))
         .insert(Character::from(texture_atlas))
-        .insert(Player);
+        .insert(Player::default());
 }
 
 // (from 'sprite_sheet')
@@ -265,7 +280,7 @@ fn setup_enemy(
     commands
         .spawn_bundle(SpriteSheetBundle {
             transform: Transform {
-                translation: Vec3::new(px, py, 0.3),
+                translation: Vec3::new(px, py, Z_AXIS),
                 scale: Vec3::splat(0.5),
                 ..Default::default()
             },
@@ -352,6 +367,27 @@ fn animate_enemy(
 }
 
 //
+// Collision detection
+//
+fn check_collision(
+    mut player_query: Query<(&Transform, &mut Player)>,
+    collider_query: Query<&Transform, With<Enemy>>,
+) {
+    let (player_trans, mut player) = player_query.single_mut();
+    // let player_size = player_trans.scale.truncate();
+    for enemy_trans in collider_query.iter() {
+        if let Some(_collision) = collide(
+            player_trans.translation,
+            Vec2::new(40.0, 40.0), // player_size,
+            enemy_trans.translation,
+            Vec2::new(40.0, 40.0), // enemy_trans.scale.truncate(),
+        ) {
+            player.score *= 0.5;
+        }
+    }
+}
+
+//
 // Configuration
 //
 // (from texture_atlas)
@@ -413,6 +449,16 @@ fn track_mouse_movement(
             player.diff_y = 0.0;
         }
     }
+}
+
+fn update_score(
+    mut player_query: Query<&mut Player>,
+    mut score_query: Query<&mut Text, With<ScoreLabel>>,
+) {
+    let mut player = player_query.single_mut();
+    player.score += 1.0;
+    let mut score = score_query.single_mut();
+    score.sections[1].value = format!("{}", player.score as u32);
 }
 
 //
