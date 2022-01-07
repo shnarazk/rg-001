@@ -12,19 +12,7 @@
 
 ## Adapt 'Dodge' (your first Godot game) to Bevy-0.6
 
-ほぼ移植終了。機能追加検討中。
-
-```
-cargo run --release --bin dodge
-```
-
-Wait. Before running it, you need to put the assets from Godot-doc site.
-
-1. get [dodge_assets.zip](https://docs.godotengine.org/en/stable/_downloads/e79a087a28c8eb4d140359198a122c0f/dodge_assets.zip)
-1. put the contents under `assets/dodge/`
-
-- [メモ;Notes in Japanese](https://github.com/shnarazk/rg-001/blob/main/Dodge.md) (under construction)
-- [Your first game](https://docs.godotengine.org/en/stable/getting_started/step_by_step/your_first_game.html) with [Godot](https://godotengine.org/)
+ほぼ移植終了。https://github.com/shnarazk/dodge-the-bevy に独立しました。
 
 ## Adapt Snake to Bevy-0.6
 
